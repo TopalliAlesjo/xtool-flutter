@@ -1,0 +1,33 @@
+diff --git a/flutter/build.sh b/flutter/build.sh
+index bcb4620..5d55359 100755
+--- a/flutter/build.sh
++++ b/flutter/build.sh
+@@ -85,7 +85,7 @@ python3 "$here/tools/gen-shell-package.py" "$app" "$shell_pkg" "$MIN_IOS"
+ products=$shell_pkg/.build/out/Products/Release-iphoneos
+
+ echo "== 3. Wrapper: icons, storyboards, Info.plist"
+-"$tools/actool" "$app/ios/Runner/Assets.xcassets" --compile "$bundle" --platform iphoneos \
++"${ACTOOL:-$tools/actool}" "$app/ios/Runner/Assets.xcassets" --compile "$bundle" --platform iphoneos \
+   --app-icon AppIcon --minimum-deployment-target "$MIN_IOS" --target-device iphone --target-device ipad \
+   --output-partial-info-plist "$stage/icon.plist" --output-format human-readable-text >"$out/actool.log" 2>&1 ||
+   { cat "$out/actool.log" >&2; exit 1; }
+@@ -106,6 +106,7 @@ for b in "$products"/*.bundle; do [ ! -d "$b" ] || cp -R "$b" "$bundle/"; done
+ cp -R "$asm/App.framework" "$asm/Flutter.framework" "$bundle/Frameworks/"
+ for f in "$asm"/native_assets/*.framework; do [ ! -d "$f" ] || cp -R "$f" "$bundle/Frameworks/"; done
+ cp "$app/ios/Flutter/AppFrameworkInfo.plist" "$bundle/"
++[ ! -f "$app/ios/Runner/PrivacyInfo.xcprivacy" ] || cp "$app/ios/Runner/PrivacyInfo.xcprivacy" "$bundle/PrivacyInfo.xcprivacy"
+ printf 'APPL????' >"$bundle/PkgInfo"
+ rm -f "$out/Runner.ipa"
+ (cd "$out" && zip -qry Runner.ipa Payload)
+diff --git a/flutter/tools/gen-info-plist.py b/flutter/tools/gen-info-plist.py
+index 09687ca..cb3e1bc 100755
+--- a/flutter/tools/gen-info-plist.py
++++ b/flutter/tools/gen-info-plist.py
+@@ -19,6 +19,7 @@ src, icon, out, bundle_id, build_name, build_number, min_ios, sdk, families = sy
+
+ settings = {
+     "DEVELOPMENT_LANGUAGE": "en",
++    "APP_DISPLAY_NAME": os.environ.get("APP_DISPLAY_NAME", "Runner"),
+     "EXECUTABLE_NAME": "Runner",
+     "PRODUCT_NAME": "Runner",
+     "PRODUCT_MODULE_NAME": "Runner",
