@@ -13,3 +13,14 @@ DerivedData/
 
 /openapi
 /.tmp
+
+# xtool-flutter: private lab journal, logs and evidence (personal paths, device data)
+/Documentation/Flutter/lab-journal/
+# Flutter/iOS build outputs and local secrets
+*.xip
+*.mobileprovision
+*.p12
+*.cer
+*.private.log
+pubspec_overrides.yaml
+/flutter/**/__pycache__/
