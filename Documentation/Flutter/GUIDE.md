@@ -152,7 +152,10 @@ bash ~/xtool-flutter-lab/xtool/flutter/scripts/prepare-flutter-ios.sh
 
 This clones omarchy-apple-dev at a pinned commit, applies
 [our small patch](../../flutter/patches/omarchy-apple-dev-f6af7cf.patch), builds the
-Linux `actool`, and builds Dart's `gen_snapshot` for iOS. The last step downloads
+Linux `actool`, and builds Dart's `gen_snapshot` for iOS. Preparation also retains
+Objective-C plugin categories with `-ObjC` and fixes the bitmap row stride in a
+local pinned AssetKit copy; see [native runner and icon regressions](IOS-FIXES.md).
+The last step downloads
 ~7 GB of Dart sources and Google-hosted build tools and runs for a long time. It is
 done once per Flutter version; the original macOS `gen_snapshot` is kept as
 `gen_snapshot_arm64.macos` in the Flutter cache.

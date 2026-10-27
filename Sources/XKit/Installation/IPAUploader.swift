@@ -13,10 +13,35 @@ public final class IPAUploader: Sendable {
 
     public enum Error: Swift.Error {
         case unexpectedSymlink(at: URL)
+        case invalidWriteCount(Int)
     }
 
     private static let packagePath = URL(fileURLWithPath: "/PublicStaging")
     private static let bufferSize = 1 << 20 // 1 MB
+
+    static func stagingLocation() -> URL {
+        packagePath.appendingPathComponent("XTool-App-\(UUID().uuidString).ipa")
+    }
+
+    /// AFC can acknowledge only part of a buffer. Retry the remaining suffix,
+    /// and stop on a stalled or invalid write instead of corrupting the IPA.
+    static func writeChunk(
+        _ buffer: Data,
+        write: (Data) throws -> Int,
+        progress: (Int) -> Void
+    ) throws {
+        var offset = 0
+        while offset < buffer.count {
+            try Task.checkCancellation()
+            let remaining = buffer.dropFirst(offset)
+            let written = try write(remaining)
+            guard written > 0 && written <= remaining.count else {
+                throw Error.invalidWriteCount(written)
+            }
+            offset += written
+            progress(written)
+        }
+    }
 
     public final class UploadedIPA: Sendable {
         public let uploader: IPAUploader
@@ -53,12 +78,7 @@ public final class IPAUploader: Sendable {
                 try Task.checkCancellation()
             }
             let buf = srcData.dropFirst(totalWritten).prefix(bufferSize)
-            let bufSize = buf.count
-            var bufWritten = 0
-            while bufWritten < bufSize {
-                // not sure if rewriting the same buf is a bug but ideviceinstaller does it this way
-                let written = try destFile.write(buf)
-                bufWritten += written
+            try Self.writeChunk(buf, write: destFile.write) { written in
                 totalWritten += written
                 progress(Double(totalWritten) / sizeDouble)
             }
@@ -70,12 +90,13 @@ public final class IPAUploader: Sendable {
             try client.createDirectory(at: Self.packagePath)
         }
 
-        let dest = Self.packagePath.appendingPathComponent("XTool-App")
-        if try client.fileExists(at: dest) {
-            try client.removeItemAndContents(at: dest)
+        let dest = Self.stagingLocation()
+        do {
+            try await upload(app, to: dest, progress: progress)
+        } catch {
+            try? client.removeItemAndContents(at: dest)
+            throw error
         }
-
-        try await upload(app, to: dest, progress: progress)
 
         return UploadedIPA(uploader: self, location: dest)
     }

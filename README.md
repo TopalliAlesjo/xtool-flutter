@@ -65,6 +65,7 @@ downloaded from Apple (used only as the iOS SDK source).
 | --- | --- |
 | [GUIDE.md](Documentation/Flutter/GUIDE.md) | Setup from zero, build, install, daily loop, limits, security, tested versions |
 | [TROUBLESHOOTING.md](Documentation/Flutter/TROUBLESHOOTING.md) | Every error met so far and its fix |
+| [TOOLING-TESTS.md](Documentation/Flutter/TOOLING-TESTS.md) | Regression checks, CLI robustness fixes, private USB relay and maintenance |
 | [flutter/](flutter) | Scripts: native deps, iOS toolchain prep, IPA build, plugin adapter, Windows USB relay |
 
 ## How it works
@@ -77,8 +78,8 @@ installs. Details in the [guide](Documentation/Flutter/GUIDE.md#how-it-works).
 
 ## Credits and license
 
-- [xtool](https://github.com/xtool-org/xtool) by Kabir Oberai — MIT. Everything under
-  `Sources/` is upstream xtool; this fork tracks its releases.
+- [xtool](https://github.com/xtool-org/xtool) by Kabir Oberai — MIT. This fork tracks
+  upstream releases and includes [targeted CLI robustness fixes](Documentation/Flutter/TOOLING-TESTS.md).
 - [omarchy-apple-dev](https://github.com/joshuaswarren/omarchy-apple-dev) by Joshua
   Warren — MIT. Its Flutter-on-Linux build (Linux `gen_snapshot`, SwiftPM shell
   package, `actool`/`ibtool`) is the core of the IPA build; it is fetched at a pinned

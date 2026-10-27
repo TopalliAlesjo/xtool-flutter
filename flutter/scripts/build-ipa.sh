@@ -12,7 +12,7 @@
 set -euo pipefail
 
 lab=${XTOOL_FLUTTER_LAB:-$HOME/xtool-flutter-lab}
-omarchy=$lab/omarchy-apple-dev
+omarchy=${OMARCHY_APPLE_DEV:-$lab/omarchy-apple-dev}
 app=${1:?usage: build-ipa.sh <flutter app dir> [KEY=VALUE ...]}
 
 [ -x "$omarchy/flutter/build.sh" ] || { echo "run flutter/scripts/prepare-flutter-ios.sh first" >&2; exit 1; }
@@ -22,5 +22,7 @@ export FLUTTER=${FLUTTER:-$(command -v flutter)}
 
 bash "$omarchy/flutter/build.sh" "$@"
 ipa=$(readlink -f "$app")/build/ios-linux/Runner.ipa
+python3 "$(dirname "$(readlink -f "$0")")/verify-ios-bundle.py" \
+  "$(dirname "$ipa")/Payload/Runner.app" --source "$app"
 echo "IPA: $ipa"
 sha256sum "$ipa"

@@ -14,9 +14,8 @@ set -euo pipefail
 
 here=$(dirname "$(readlink -f "$0")")
 lab=${XTOOL_FLUTTER_LAB:-$HOME/xtool-flutter-lab}
-omarchy=$lab/omarchy-apple-dev
+omarchy=${OMARCHY_APPLE_DEV:-$lab/omarchy-apple-dev}
 omarchy_commit=f6af7cf5e45bbc756892972d036fc49ed35ed15e
-patch=$here/../patches/omarchy-apple-dev-f6af7cf.patch
 
 command -v flutter >/dev/null || { echo "flutter is not on PATH; source env.sh" >&2; exit 1; }
 command -v swift >/dev/null || { echo "swift is not on PATH; source env.sh" >&2; exit 1; }
@@ -27,18 +26,23 @@ if [ ! -d "$omarchy/.git" ]; then
 fi
 [ "$(git -C "$omarchy" rev-parse HEAD)" = "$omarchy_commit" ] ||
   { echo "$omarchy is not at $omarchy_commit" >&2; exit 1; }
-if git -C "$omarchy" apply --check "$patch" 2>/dev/null; then
-  git -C "$omarchy" apply "$patch"
-  echo "== omarchy patch applied"
-elif git -C "$omarchy" apply --reverse --check "$patch" 2>/dev/null; then
-  echo "== omarchy patch already applied"
-else
-  echo "omarchy checkout has local changes that conflict with $patch" >&2; exit 1
-fi
+for patch in "$here/../patches/omarchy-apple-dev-f6af7cf.patch" \
+             "$here/../patches/omarchy-objc-linking-f6af7cf.patch"; do
+  if git -C "$omarchy" apply --check "$patch" 2>/dev/null; then
+    git -C "$omarchy" apply "$patch"
+    echo "== omarchy patch applied"
+  elif git -C "$omarchy" apply --reverse --check "$patch" 2>/dev/null; then
+    echo "== omarchy patch already applied"
+  else
+    echo "omarchy checkout has local changes that conflict with $patch" >&2; exit 1
+  fi
+done
 
 echo "== Linux actool"
 (cd "$omarchy/tools/darwin-tools" &&
-  swift package resolve --force-resolved-versions &&
+  { [ -d Patched/AssetKit ] || swift package resolve --force-resolved-versions; } &&
+  python3 "$here/prepare-assetkit.py" "$omarchy/tools/darwin-tools" &&
+  swift package resolve --skip-update &&
   swift build --configuration release --product actool --disable-automatic-resolution)
 
 echo "== Dart gen_snapshot for iOS (long)"

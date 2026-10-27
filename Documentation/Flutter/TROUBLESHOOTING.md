@@ -54,6 +54,14 @@ plugins use `flutter/scripts/swiftpm-objc-plugin-adapter.py`.
 
 Set `APP_DISPLAY_NAME="My App"` when running `build-ipa.sh`.
 
+### App crashes when entering/resuming a workout; small icons are distorted
+
+Upgrade the helper with `prepare-flutter-ios.sh`, rebuild and reinstall the IPA.
+The old Linux pipeline omitted Objective-C categories used by `wakelock_plus`
+and wrote bitmap rows with a different stride from the catalog's metadata.
+Both are fixed in the helper; replacing the original logo or suppressing Dart
+errors does not fix them. See [causes, binary checks and regressions](IOS-FIXES.md).
+
 ## Apple ID login
 
 ### `Error: This action cannot be completed at this time. (-80046)`

@@ -143,7 +143,7 @@ public actor Connection {
 private typealias SendableMetatype = Any
 #endif
 
-private actor WeakPool<Key: Hashable & SendableMetatype, Value: AnyObject & Sendable, Failure: Error> {
+actor WeakPool<Key: Hashable & SendableMetatype, Value: AnyObject & Sendable, Failure: Error> {
     init() {}
 
     private var pendingValues: [Key: Task<Result<Value, Failure>, Never>] = [:]
@@ -166,10 +166,10 @@ private actor WeakPool<Key: Hashable & SendableMetatype, Value: AnyObject & Send
         }
 
         let task = Task { () -> Result<Value, Failure> in
+            defer { pendingValues[key] = nil }
             do throws(Failure) {
                 let connection = try await create()
                 existingValues[key] = Weak(connection)
-                pendingValues[key] = nil
                 return .success(connection)
             } catch {
                 return .failure(error)

@@ -1,0 +1,25 @@
+name: Flutter pipeline tools
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  portable-regressions:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+      - name: Python tool regressions
+        run: python3 -m unittest discover -s flutter/tests -p 'test_*.py'
+      - name: Binary USB bridge regressions
+        run: node --test flutter/tests/bridge.test.cjs
+      - name: Shell syntax and diagnostics
+        run: |
+          for script in flutter/scripts/*.sh flutter/scripts/env.sh.example; do
+            bash -n "$script"
+            shellcheck --severity=warning "$script"
+          done

@@ -27,19 +27,28 @@ enum Console {
 
             fflush(stdoutSafe)
 
-            var data = Data()
-            for try await chunk in stdin {
-                let view = chunk.readableBytesView
-                if let endIndex = view.firstIndex(of: UInt8(ascii: "\n")) {
-                    data += view[..<endIndex]
-                    break
-                } else {
-                    data += view
-                }
-            }
-            let str = String(decoding: data, as: UTF8.self)
-            return str.hasSuffix("\r") ? String(str.dropLast()) : str
+            return try await readPromptInput(from: stdin)
         }
+    }
+
+    static func readPromptInput<S: AsyncSequence>(from stdin: S) async throws -> String where S.Element == ByteBuffer {
+        var data = Data()
+        var receivedInput = false
+        for try await chunk in stdin {
+            let view = chunk.readableBytesView
+            if !view.isEmpty { receivedInput = true }
+            if let endIndex = view.firstIndex(of: UInt8(ascii: "\n")) {
+                data += view[..<endIndex]
+                break
+            } else {
+                data += view
+            }
+        }
+        guard receivedInput else {
+            throw Console.Error("Input closed while waiting for a response.")
+        }
+        let str = String(decoding: data, as: UTF8.self)
+        return str.hasSuffix("\r") ? String(str.dropLast()) : str
     }
 
     static func promptRequired(_ message: String, existing: String?) async throws -> String {

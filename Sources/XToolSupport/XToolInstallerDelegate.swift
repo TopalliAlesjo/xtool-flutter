@@ -81,14 +81,20 @@ actor XToolInstallerDelegate: IntegratedInstallerDelegate {
     func confirmRevocation(of certificates: [DeveloperServicesCertificate]) async -> Bool {
         print("\nThe following certificates must be revoked:")
         print(
-            certificates.map {
-                "- \($0.attributes!.name!) (expires \($0.attributes!.expirationDate!.formatted(date: .abbreviated, time: .shortened)))"
-            }.joined(separator: "\n")
+            certificates.map(Self.certificateDescription).joined(separator: "\n")
         )
         do {
             return try await Console.confirm("Continue?")
         } catch {
             return false
         }
+    }
+
+    nonisolated static func certificateDescription(_ certificate: DeveloperServicesCertificate) -> String {
+        let name = certificate.attributes?.name ?? certificate.attributes?.displayName ?? certificate.id
+        let expiration = certificate.attributes?.expirationDate.map {
+            $0.formatted(date: .abbreviated, time: .shortened)
+        } ?? "unknown"
+        return "- \(name) (expires \(expiration))"
     }
 }

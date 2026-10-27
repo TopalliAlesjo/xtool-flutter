@@ -99,7 +99,7 @@ jobs:
       push: true
       platforms: linux/amd64,linux/arm64
       meta-images: |
-        ghcr.io/xtool-org/xtool
+        ghcr.io/${{ github.repository }}
       meta-tags: |
         type=semver,pattern={{version}}
     secrets:

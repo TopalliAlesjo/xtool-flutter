@@ -1,0 +1,10 @@
+diff --git a/flutter/build.sh b/flutter/build.sh
+--- a/flutter/build.sh
++++ b/flutter/build.sh
+@@ -78,5 +78,6 @@
+   -Xswiftc "-F$asm" -Xcc "-F$asm" -Xlinker "-F$asm" -Xlinker -framework -Xlinker Flutter \
+   -Xlinker -rpath -Xlinker @executable_path/Frameworks \
++  -Xlinker -ObjC \
+   -Xlinker -platform_version -Xlinker ios -Xlinker "$MIN_IOS" -Xlinker "$sdk_version") \
+   >"$out/shell-build.log" 2>&1 || { grep -E 'error' "$out/shell-build.log" | head -n 40 >&2; exit 1; }
+ products=$shell_pkg/.build/out/Products/Release-iphoneos

@@ -94,18 +94,39 @@ public struct DirectoryStorage: KeyValueStorage {
     }
 
     public func data(forKey key: String) throws -> Data? {
-        try? Data(contentsOf: url(for: key))
+        guard FileManager.default.fileExists(atPath: base.path) else { return nil }
+        try makeDirectoryPrivate()
+        let file = url(for: key)
+        guard FileManager.default.fileExists(atPath: file.path) else { return nil }
+        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+        return try Data(contentsOf: file)
+    }
+
+    private func makeDirectoryPrivate() throws {
+        try FileManager.default.createDirectory(
+            at: base,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        // Also migrate directories created by older releases before accessing secrets.
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: base.path)
     }
 
     public func setData(_ data: Data?, forKey key: String) throws {
         let url = url(for: key)
-        if !FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path) {
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        }
         if let data = data {
-            try data.write(to: url)
+            try makeDirectoryPrivate()
+            // The private directory protects the temporary file throughout atomic replacement.
+            try data.write(to: url, options: .atomic)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
         } else {
-            try FileManager.default.removeItem(at: url)
+            guard FileManager.default.fileExists(atPath: base.path) else { return }
+            try makeDirectoryPrivate()
+            do {
+                try FileManager.default.removeItem(at: url)
+            } catch CocoaError.fileNoSuchFile {
+                // Deleting an absent key is idempotent, like the other storage adapters.
+            }
         }
     }
 }

@@ -82,7 +82,7 @@ public struct KeyValueSigningInfoManager: SigningInfoManager {
     }
 
     public func setInfo(_ info: SigningInfo?, forIdentityID identityID: String) throws {
-        let data = try encoder.encode(info)
+        let data = try info.map { try encoder.encode($0) }
         try storage.setData(data, forKey: identityID)
     }
 }
